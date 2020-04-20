@@ -32,7 +32,7 @@
 			},
 			max: {
 				type: Number,
-				default: 100
+				default: 10000
 			},
 			step: {
 				type: Number,

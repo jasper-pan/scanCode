@@ -1,19 +1,19 @@
 <template>
 	<view>
-		<cu-custom bgColor="bg-gradual-blue" :isBack="true">
-			<block slot="backText">返回</block>
-			<block slot="content">录入页</block>
+		<cu-custom bgColor="bg-gradual-blue" :isBack="true" :datas ="dataSouce" >
+			<block slot="backText">退出</block>
+			<block slot="content">见客扫描</block>
+			<block slot="right" style="font-size: 14px;">{{fileName}}</block>
 		</cu-custom>
 		<scroll-view scroll-x class="bg-white nav text-center fixed base-info-wrap" :style="[{top:CustomBar + 'px'}]">
 			<form @submit="formSubmit" @reset="formReset">
 
 				<view class="sub-wrap">
 					<view class="base-info-item">
-
 						<view class="flex-sub flex-row">
 							<view class="title">日期:</view>
 							<picker mode="date" v-model="tran_date" name='tran_date' @change="DateChange">
-								<view class="picker">
+								<view class="picker" style="background-color: yellow;">
 									{{tran_date}}
 								</view>
 							</picker>
@@ -21,7 +21,7 @@
 						<view class="flex-sub flex-row">
 							<view class="title">要求完成日:</view>
 							<picker mode="date" v-model="req_date" name='req_date' @change="endDateChange">
-								<view class="picker">
+								<view class="picker" style="background-color: yellow;">
 									{{req_date}}
 								</view>
 							</picker>
@@ -33,11 +33,11 @@
 
 						<view class="flex-sub flex-row">
 							<view class="title">销售员:</view>
-							<input placeholder="" v-model="salesman" name='salesman'></input>
+							<input placeholder="" v-model="salesman" name='salesman' style="background-color: yellow;"></input>
 						</view>
 						<view class="flex-sub flex-row">
 							<view class="title">客户编号:</view>
-							<input style="width: 100%;" placeholder="" v-model="customer_code" name='customer_code'></input>
+							<input style="width: 100%;background-color: yellow;" placeholder="" v-model="customer_code" name='customer_code'></input>
 						</view>
 
 
@@ -51,7 +51,7 @@
 						</view>
 						<view class="flex-sub flex-row">
 							<view class="title">客户组:</view>
-							<input style="width: 100%;" placeholder="" v-model="team" name='team'></input>
+							<input  style="width: 100%;background-color: yellow;" placeholder="" v-model="team" name='team'></input>
 						</view>
 					</view>
 					<view class="base-info-item">
@@ -74,7 +74,7 @@
 					</view>
 					<view class="flex-sub flex-row">
 						<view class="title">联系人:</view>
-						<input style="width: 100%;" v-model='contactman' placeholder="" name='contactman'></input>
+						<input style="width: 100%;background-color: yellow;" v-model='contactman' placeholder="" name='contactman'></input>
 					</view>
 
 				</view>
@@ -90,7 +90,7 @@
 				</view>
 				<view class="base-info-item pd-rg-10" style="justify-content: flex-end;">
 					<button type="ghost" class="bg-blue" @click="addTableItem()">Add</button>
-					<button type="ghost" class="bg-red" @click="DeleteOne()">Delete</button>
+					<button type="ghost" class="bg-red" @click="DeleteLast()">Delete</button>
 					<button type="ghost" class="bg-red" @click="deleteAll()">DeleteAll</button>
 					<button type="ghost" class="bg-green" form-type="submit">保存Save</button>
 					<button type="ghost" class="bg-green" @click="createFile()">新建New</button>
@@ -101,24 +101,35 @@
 
 		</scroll-view>
 		<block>
-			<view class=" bg-white" style="margin-top:300px">
+			<view class=" bg-white" style="margin-top:350px">
 				<tki-file-manager ref="filemanager" @result="resultPath"></tki-file-manager>
-				<v-table :key="tableKey"  :columns="columns" 
+				<v-table :key="tableKey" 
+				:scrollTop='scrollTop'
+				 :height ='(screenHeight-30)'
+				 :columns="columns" 
 				:fixed-checkbox="fixedCheckBox" 
-				:list="dataSouce"  
-				@edi="ediFn"></v-table>
+				:list="dataSouce" 
+				@dbhandler ='ediFn'
+				@dele="DeleteOne"></v-table>
 			</view>
 
 
 
 		</block>
-		 
+		<block>
+			<view class="fix-bottom">
+				<view style="width: 420px;border-right: 1px solid red;">{{dataSouce.length}}</view>
+				<view style="width: 80px;border-right: 1px solid red;">{{totalusage}}</view>
+				<view style="width: 80px;border-right: 1px solid red;">{{totalqty}}</view>
+			</view>
+		</block>
 		 
 		<view class="cu-modal bottom-modal"  :class="modalName=='Modal'?'show':''" @tap="hideModal">
 			<view class="cu-dialog" @tap.stop="">
 				<form @submit="editClick" @reset="editReset">
 				<view class="cu-bar bg-white">
 					<button class="action text-blue"  @tap="hideModal()" style="font-size: 18px;">取消</button>
+					<view>{{title}}</view>
 					<button class="action text-green" form-type="submit" >确定</button>
 				</view>
 				<view class="grid col-3">
@@ -150,12 +161,12 @@
 						</view>
 						<view class="cu-form-group">
 							<view class="title">数量</view>
-								<yp-number-box v-model="tableQty" :value='tableQty' @change="qtyChange"></yp-number-box>
+								<yp-number-box v-model="tableUsage" :value='tableUsage' @change="usageChange"></yp-number-box>
 							<!-- <input placeholder="请输入数量" v-model='tableQty' type="number"  name="tableQty"></input> -->
 						</view>
 						<view class="cu-form-group">
 							<view class="title">份数</view>
-							<yp-number-box v-model="tableUsage"   :value='tableUsage' @change="usageChange">></yp-number-box>
+							<yp-number-box v-model="tableQty"   :value='tableQty' @change="qtyChange">></yp-number-box>
 							<!-- <input placeholder="请输入份数" v-model='tableUsage' type="number" name="tableUsage"></input> -->
 						</view>
 						<view class="cu-form-group">
@@ -191,21 +202,11 @@
 	var currentWebview = null
 	var embed = null
 	var barcode = null
-	const  operateCol = {
-		operate: {
-			edi: {
-				label: "编辑",
-				fn(row, index) {
-					console.log(1111)
-					//this.alertFnCallback(row,index);
-				}
-			}
-		}
-	}
 	export default {
 
 		data() {
 			return {
+				title:"",
 				tableKey:1,
 				styleNo:'',
 				colorCode:'',
@@ -219,6 +220,7 @@
 				ta_pack_unit:0,
 				picker: ['Hanger', 'Yardage', 'PresentationBoard','A4','ProgramBook','Hanger-A'],
 				dataSouce: [],
+				scrollTop:0,
 				fixedCheckBox: true,
 				index:1,
 				columns: [{
@@ -228,28 +230,34 @@
 					},{
 						title: '款号',
 						key: 'style_no',
-						$width:'170px'
+						$width:'120px'
 						
 					},
 					{
 						title: '颜色编号',
-						key: 'color_code'
+						key: 'color_code',
+						$width:'90px'
 					},
 					{
 						title: '制办方式',
-						key: 'pack_type'
+						key: 'pack_type',
+						$width:'110px'
+						
 					},
 					{
 						title: '单位',
-						key: 'unit'
+						key: 'unit',
+						$width:'50px'
 					},
 					{
 						title: '数量',
-						key: 'qty'
+						key: 'usage',
+						$width:'80px'
 					},
 					{
 						title: '份数',
-						key: 'usage'
+						key: 'qty',
+						$width:'80px'
 					},
 					{
 						title: '备注',
@@ -262,25 +270,11 @@
 					{
 						title: '形态',
 						key: 'group2'
-					},
-					{
-						title: "操作",
-						key: "$operate",
-						$fixed:"right",
-						 
-						$operateList: [
-							{
-								label: "编辑",
-								event: "edi",
-								id: "edi"
-							}
-						]
 					}
-
 				],
 
-				tran_date: '2020-03-25',
-				req_date: '2020-03-25',
+				tran_date: this.formatDate(),
+				req_date: this.formatDate(),
 				tel_no: "",
 				new_flag:false,
 				team: "",
@@ -309,7 +303,6 @@
 		onLoad: function(option) {
 			this.callbackurl = option.callbackurl; // 回调地址
 			if (option.count) {
-				console.log(option.count)
 				this.count = option.count;
 			}
 			if (option.confirmButton) {
@@ -326,11 +319,30 @@
 			vTable,
 			ypNumberBox
 		},
+		computed:{
+			totalusage:function(){
+				var s = 0;
+				    for (var i=this.dataSouce.length-1; i>=0; i--) {
+						
+				        s += parseFloat(this.dataSouce[i].usage);
+				    }
+				    return s;
+				
+			},
+			totalqty:function(){
+				var s = 0;
+				    for (var i=this.dataSouce.length-1; i>=0; i--) {
+				        s += parseFloat(this.dataSouce[i].qty);
+				    }
+				    return s;
+		
+			}
+		},
 		created() {
 			var _this = this
 			uni.getSystemInfo({
 				success: function(res) {
-					console.log(res)
+					
 					_this.screenWidth = res.screenWidth;
 					_this.screenHeight = res.screenHeight - 420
 					_this.scanplus()
@@ -342,13 +354,24 @@
 			
 		},
 		mounted() {
+			var _this  = this
 			 setTimeout(()=>{
 			 	 this.startBarCode()
 			 },1000)
+			 uni.getStorage({
+			     key: 'saleMan',
+			     success: function (res) {
+			         _this.salesman = res.data
+			     }
+			 });
 		},
 		methods: {
 			addTableItem(){
 				var arr = this.dataSouce
+				if(arr.length>20){
+					this.scrollTop = 100
+				}
+				 
 				arr.push({
 					index:this.index,
 					style_no:"",
@@ -359,13 +382,18 @@
 					usage: 1,
 					remarks: "",
 					group1: "",
-					group2: "",
-					...operateCol
+					group2: ""
+				 
 				})
 			  var index = this.index
 			  index++
 			  this.index = index
 			   this.dataSouce = arr
+			   // setTimeout(()=>{
+				  //  this.modalName = 'Modal'
+				  //  this.resetModalForm()
+			   // },20)
+			   
 			},
 			PickerChange(e) {
 				this.ta_pack_type = e.detail.value
@@ -373,10 +401,8 @@
 			unitChange(e){
 				this.ta_pack_unit = e.detail.value
 			},
-			editClick(e){
-				
-				const { tableRemark,styleNo,colorCode,tableGroup1,tableGroup2 } = e.target.value
-				 
+			editClick(e){	
+			  const { tableRemark,styleNo,colorCode,tableGroup1,tableGroup2 } = e.target.value
 			  let oldTableData = helper.deepCopy(this.dataSouce)
 			  oldTableData[this.selectItemId] = {
 				  index:this.selectItemId+1,
@@ -402,33 +428,90 @@
 			},
 			createFile(){
 				var _this = this
-					uni.showModal({
-					    title: '新建文件',
-					    content: '新建文件将清空所有内容，是否继续',
-					    success: function (res) {
-					        if (res.confirm) {
-								 
-								_this.formReset()
-								 
-								
-					            
-					        } else if (res.cancel) {
-				
-					        }
-					    }
-					});
+					if(this.fileName){
+						uni.showModal({
+							title:'提示',
+							content: "已读取文件未保存是否新建文件",
+							 success: function (res) {
+							     if (res.confirm) {
+							 		 
+							 		 uni.showModal({
+							 		     title: '新建文件',
+							 		     content: '新建文件将清空所有内容，是否继续',
+							 		     success: function (res) {
+							 		         if (res.confirm) {
+							 		 			 
+							 		 			_this.formReset()
+							 		 			 
+							 		 			
+							 		             
+							 		         } else if (res.cancel) {
+							 		 				
+							 		         }
+							 		     }
+							 		 });
+							 		 
+							 		
+							         
+							     } else if (res.cancel) {
+							 				
+							     }
+							 }
+						})
+					}else{
+						uni.showModal({
+						    title: '新建文件',
+						    content: '新建文件将清空所有内容，是否继续',
+						    success: function (res) {
+						        if (res.confirm) {
+									 
+									_this.formReset()
+									 
+									
+						            
+						        } else if (res.cancel) {
+										
+						        }
+						    }
+						});
+					}
+					
 			},
-			DeleteOne(){
+			DeleteLast(){
+				var _this = this
+				uni.showModal({
+					title: '是否删除',
+					content: '是否删除最后一条数据',
+					success: function (res) {
+						if (res.confirm) {
+							var list = _this.dataSouce
+							list.pop()
+							_this.dataSouce =  list
+							_this.index  = _this.index -1
+							_this.codeArrayRecord = []
+						} else if (res.cancel) {
+			
+						}
+					}
+				});
+			},
+			DeleteOne(data){
 				var _this = this
 					uni.showModal({
 					    title: '是否删除',
-					    content: '是否删除最后一条数据',
+					    content: `是否删除第${data.row.index}行数据 `,
 					    success: function (res) {
 					        if (res.confirm) {
 								var list = _this.dataSouce
-								list.pop()
-								_this.dataSouce =  list
-								_this.index  = _this.index -1
+								var arr = []
+								 list.forEach((item,i)=>{
+									 if(data.index !== i){
+										 arr.push(item)
+									 }else{
+										 
+									 }
+								 })
+								_this.dataSouce =  arr
 								_this.codeArrayRecord = []
 					        } else if (res.cancel) {
 				
@@ -451,15 +534,14 @@
 					        }
 					    }
 					});
-				
 			},
+			 
 			ediFn(data) {
-				// 编辑表格中的内容
-				 console.log(data.row)				
+				// 编辑表格中的内容		
+				this.title = `修改第${data.index+1}行`
 				this.modalName = 'Modal'
 				this.ta_pack_type = this.picker.findIndex((value, index, arr) => { return value === data.row.pack_type})
 				this.ta_pack_unit = this.unit.findIndex((value, index, arr) => { return value === data.row.unit})
-				console.log(this.unit.findIndex((value, index, arr) => { return value === data.row.pack_unit}))
 				this.selectItemId = data.index
 				this.styleNo=data.row.style_no && data.row.style_no
 				this.colorCode=data.row.color_code &&data.row.color_code
@@ -468,7 +550,6 @@
 				this.tableGroup1=data.row.group1 && data.row.group1
 				this.tableGroup2=data.row.group2 && data.row.group2
 				this.tableRemark=data.row.remarks &&data.row.remarks
-				 
 			},
 			resetModalForm(){
 				// 重置表格中的数据
@@ -483,6 +564,19 @@
 				this.tableRemark=""
 			    
 			},
+			  formatDate() {
+			    var d = new Date(),
+			        month = '' + (d.getMonth() + 1),
+			        day = '' + d.getDate(),
+			        year = d.getFullYear();
+			
+			    if (month.length < 2) 
+			        month = '0' + month;
+			    if (day.length < 2) 
+			        day = '0' + day;
+			
+			    return [year, month, day].join('-');
+			},
 			formSubmit(e) {
 				// 保存后的操作
 				var _this = this
@@ -491,30 +585,51 @@
 					tran_date: this.tran_date,
 					req_date: this.req_date
 				})
-				uni.showModal({
-					title: '确认保存',
-					content: '是否确认保存信息到本地',
-					success: function (res) {
-					    if (res.confirm) {
-							_this.fileWriter(formdata)
-					    } else if (res.cancel) {
+				if(this.dataSouce.length ===0){
+					uni.showToast({
+						title:'表格数据不能为空',
+						icon:'none',
+						duration: 1000
+					})
+					return 
+				}
+				if(formdata.tran_date==='' || formdata.req_date === '' || formdata.salesman===""  || formdata.customer_code===""  || formdata.team==="" ||formdata. contactman ===""){
+					uni.showToast({
+						title:'请填写必填项',
+						icon:'none',
+						duration: 1000
+					})
+					return 
+				}
+				 
+				uni.setStorageSync('saleMan', this.salesman ||"");
+				_this.fileWriter(formdata)
+				// uni.showModal({
+				// 	title: '确认保存',
+				// 	content: '是否确认保存信息到本地',
+				// 	success: function (res) {
+				// 	    if (res.confirm) {
+				// 			_this.fileWriter(formdata)
+				// 	    } else if (res.cancel) {
 									
-					    }
-					}
-				})
+				// 	    }
+				// 	}
+				// })
 				
+
+			},
+			format(){
 
 			},
 			formReset(e) {
 				// 重置基础信息
-				this.tran_date = '2020-03-25'
-				this.req_date = '2020-03-25'
+				this.tran_date = this.formatDate()
+				this.req_date = this.formatDate()
 				this.tel_no = ""
 				this.new_flag = false
 				this.team = ""
 				this.customer_code = ""
 				this.customer_name = ""
-				this.salesman = ""
 				this.address = ""
 				this.contactman = ''
 				this.dataSouce = []
@@ -525,55 +640,19 @@
 			fileWriter(formdata) {
 				// 写入xml至 客户端
 				let that = this
-				console.log(this.fileName)
 				let dateText = this.fileName ? this.fileName :(formdata.salesman || 'noname')+'^'+(helper.CurentTime()+"").slice(2);
 				let dateRow = this.fileName ? ((this.fileName.split('-')[0])).split('^')[1]:(helper.CurentTime()+"").slice(2)
 				let tableData = ``
 			   if(this.dataSouce.length === 0){
-				   tableData =
-				   		`<C1-${dateRow}_row>
-				   			 <team>${formdata.team}</team>
-				   			 <new_flag>${formdata.new_flag}</new_flag>
-				   			 <customer_code>${formdata.customer_code}</customer_code>
-				   			 <customer_name>${formdata.customer_name}</customer_name>
-				   			 <address>${formdata.address}</address>
-				   			 <tel_no>${formdata.tel_no}</tel_no>
-				   			 <contactman>${formdata.contactman}</contactman>
-				   			 <tran_date>${formdata.tran_date}</tran_date>
-				   			 <req_date>${formdata.req_date}</req_date>
-				   			 <salesman>${formdata.salesman}</salesman>
-				   		   </C1-${dateRow}_row>`
-				    
+				   tableData =`<C1-${dateRow}_row><team>${formdata.team}</team><new_flag>${formdata.new_flag?1:0}</new_flag><customer_code>${formdata.customer_code}</customer_code><customer_name>${formdata.customer_name}</customer_name><address>${formdata.address}</address><tel_no>${formdata.tel_no}</tel_no><contactman>${formdata.contactman}</contactman><tran_date>${formdata.tran_date}</tran_date><req_date>${formdata.req_date}</req_date><salesman>${formdata.salesman}</salesman></C1-${dateRow}_row>`
 			   }else{
 				   this.dataSouce.forEach((item) => {
-				   	tableData +=
-				   		`<C1-${dateRow}_row>
-				   			 <style_no>${item.style_no ? item.style_no : ''}</style_no>
-				   			 <color_code>${item.color_code ? item.color_code:''}</color_code>
-				   			 <pack_type>${item.pack_type ? item.pack_type:''}</pack_type>
-				   			 <unit>${item.unit ? item.unit:''}</unit>
-				   			 <usage>${item.usage ? item.usage:''}</usage>
-				   			 <qty>${item.qty ? item.qty:''}</qty>
-				   			 <remarks>${item.remarks ? item.remarks:''}</remarks>
-							 <group1>${item.group1 ? item.group1:''}</group1>
-							 <group2>${item.group2 ? item.group2:''}</group2>
-				   			 <team>${formdata.team}</team>
-				   			 <new_flag>${formdata.new_flag}</new_flag>
-				   			 <customer_code>${formdata.customer_code}</customer_code>
-				   			 <customer_name>${formdata.customer_name}</customer_name>
-				   			 <address>${formdata.address}</address>
-				   			 <tel_no>${formdata.tel_no}</tel_no>
-				   			 <contactman>${formdata.contactman}</contactman>
-				   			 <tran_date>${formdata.tran_date}</tran_date>
-				   			 <req_date>${formdata.req_date}</req_date>
-				   			 <salesman>${formdata.salesman}</salesman>
-				   		   </C1-${dateRow}_row>`
+				   	tableData +=`<C1-${dateRow}_row><style_no>${item.style_no ? item.style_no : ''}</style_no><color_code>${item.color_code ? item.color_code:''}</color_code><pack_type>${item.pack_type ? item.pack_type:''}</pack_type><unit>${item.unit ? item.unit:''}</unit><usage>${item.usage ? item.usage:''}</usage><qty>${item.qty ? item.qty:''}</qty><remarks>${item.remarks ? item.remarks:''}</remarks><team>${formdata.team}</team><new_flag>${formdata.new_flag?1:0}</new_flag><customer_code>${formdata.customer_code}</customer_code><customer_name>${formdata.customer_name}</customer_name><address>${formdata.address}</address><tel_no>${formdata.tel_no}</tel_no><contactman>${formdata.contactman}</contactman><tran_date>${formdata.tran_date}</tran_date><req_date>${formdata.req_date}</req_date><salesman>${formdata.salesman}</salesman></C1-${dateRow}_row>`
 				   })
 			   }
-				
-				let xmlData =`<?xml version="1.0" encoding="utf-8"?>
-				<C1-${dateRow}>${tableData}</C1-${dateRow}>`
-				 
+				let xmlData =
+`<?xml version="1.0" encoding="utf-8"?>
+<C1-${dateRow}>${tableData}</C1-${dateRow}>`
 				plus.io.requestFileSystem(plus.io.PUBLIC_DOCUMENTS, function(fs) {
 					// fs.root是根目录操作对象DirectoryEntry
 					var directoryReader = fs.root.createReader();
@@ -581,6 +660,7 @@
 								var i;
 								var indexs = 1
 								var fileName = `${dateText}.xml`
+								
 								if(!that.fileName){
 									// 修改
 									for( i=0; i < entries.length; i++ ) {
@@ -589,8 +669,9 @@
 											   indexs++
 										 }
 									}
+									 
 								}
-								
+								that.fileName=dateText
 							   
 								fs.root.getFile(fileName, {
 									create: true
@@ -607,10 +688,11 @@
 												title: "保存成功",
 												duration: 1000
 											})
-											that.formReset()
+											// that.formReset()
 										};
 										writer.seek(writer.length);
 										writer.write(xmlData);
+										
 									}, function(e) {
 										alert(e.message);
 									});
@@ -622,6 +704,7 @@
 				this.$refs.filemanager._openFile()
 			},
 			resultPath(e) {
+				 
 				this.fileReader(e) // 获取选取的文件路径
 			},
 			fileReader(url) {
@@ -630,6 +713,7 @@
 				// 请求本地系统文件对象 plus.io.PUBLIC_DOCUMENTS：  程序公用文档目录常量
 				plus.io.requestFileSystem(plus.io.PUBLIC_DOCUMENTS, function(fobject) {
 					// fs.root是根目录操作对象DirectoryEntry
+					console.log(url)
 					let filename = url.split('/documents/')[1] //截取document后的文件名
 				 
 					fobject.root.getFile(filename, {}, function(fileEntry) {
@@ -640,7 +724,6 @@
 							fileReader.readAsText(file, 'utf-8');
 							fileReader.onloadend = async function(evt) {
 								const doc = new DOMParser().parseFromString(evt.target.result, 'text/xml')
-								console.log(evt.target.result)
 								self.tran_date = doc.documentElement.getElementsByTagName('tran_date')[0].childNodes[0] && doc.documentElement.getElementsByTagName('tran_date')[0].childNodes[0].data.split(' ')[0];
 								self.req_date = doc.documentElement.getElementsByTagName('req_date')[0].childNodes[0] && doc.documentElement.getElementsByTagName('req_date')[0].childNodes[0].data.split(' ')[0];
 								self.tel_no = doc.documentElement.getElementsByTagName('tel_no')[0].childNodes[0]&& doc.documentElement.getElementsByTagName('tel_no')[0].childNodes[0].data;
@@ -665,13 +748,13 @@
 										unit: row[i].getElementsByTagName('unit')[0].childNodes[0].data && row[i].getElementsByTagName('unit')[0].childNodes[0].data,
 										usage: row[i].getElementsByTagName('usage')[0].childNodes[0] && row[i].getElementsByTagName('usage')[0].childNodes[0].data ,
 										qty: row[i].getElementsByTagName('qty')[0].childNodes[0] && row[i].getElementsByTagName('qty')[0].childNodes[0].data,
-										remarks: row[i].getElementsByTagName('remarks')[0].childNodes[0] && row[i].getElementsByTagName('remarks')[0].childNodes[0].data,
-										group1: row[i].getElementsByTagName('group1')[0].childNodes[0] && row[i].getElementsByTagName('group1')[0].childNodes[0].data,
-										group2: row[i].getElementsByTagName('group2')[0].childNodes[0] && row[i].getElementsByTagName('group2')[0].childNodes[0].data,
+										remarks: row[i].getElementsByTagName('remarks')[0].childNodes[0] && row[i].getElementsByTagName('remarks')[0].childNodes[0].data
 									})
+									// group1: row[i].getElementsByTagName('group1')[0].childNodes[0] && row[i].getElementsByTagName('group1')[0].childNodes[0].data,
+									// group2: row[i].getElementsByTagName('group2')[0].childNodes[0] && row[i].getElementsByTagName('group2')[0].childNodes[0].data,
 								}
 						       var flag = doc.documentElement.getElementsByTagName('new_flag')[0].childNodes[0]&&  doc.documentElement.getElementsByTagName('new_flag')[0].childNodes[0].data 
-							    if(flag === 'true'){
+							    if(flag === '1'){
 									self.new_flag = true
 								}else{
 									self.new_flag = false									
@@ -684,8 +767,6 @@
 										duration: 1000
 									})
 								},50)
-								
-
 							};
 							fileReader.onerror = function(e) {
 								console.log(e)
@@ -695,7 +776,9 @@
 				});
 			},
 			startBarCode() {
-				console.log(barcode)
+				// uni.navigateTo({
+				// 	url:"../info/index"
+				// })
 				if (this.startScanText === '停止扫描') {
 					barcode.cancel()
 					this.startScanText = '开始扫描'
@@ -704,8 +787,6 @@
 					this.startScanText = '停止扫描'
 
 				}
-
-
 			},
 			async closeBarCode() {
 				currentWebview.remove('#barcode')
@@ -747,7 +828,9 @@
 				barcode.start() //开始识别二维码  
 				barcode.onmarked = function(type, code, file) { //扫码成功后进行的事件 
 					var codeArray = that.dataSouce;
+					console.log(code)
 					var  postions = that.filterTableData(code)
+					
 					if(postions>-1){
 							codeArray[postions].qty = codeArray[postions].qty*1 +1 ;
 							that.dataSouce = codeArray;
@@ -766,11 +849,10 @@
 					}else{
 						 
 							let codes = (code+"").split('::')
-						 
 							codeArray.push({
 								index:that.index,
-								style_no:codes[0],
-								color_code:codes[1],
+								style_no:codes[0].substring(1,codes[0].length),
+								color_code:codes[1].substring(1,codes[1].length),
 								pack_type:'Hanger',
 								unit:'YD',
 								qty: "1",
@@ -778,7 +860,7 @@
 								remarks: "",
 								group1: "",
 								group2: "",
-								...operateCol 
+								 
 							});
 							 var index = that.index
 							 index++
@@ -804,35 +886,59 @@
 				console.log(1111)
 				if(!code) {
 					uni.showToast({
-						title:'未扫描到二位码'
+						title:'未扫描到二位码',
+						icon:'none'
 					})
 					return false
 				}
-				console.log(222)
-				 var style_no = code.split('::')[0]
-				 var color_code = code.split("::")[1]
-				for(let i =0;i<this.dataSouce.length;i++){
-					console.log(style_no ,color_code ,this.dataSouce[i].style_no ,this.dataSouce[i].color_code)
-					if(style_no === this.dataSouce[i].style_no && color_code === this.dataSouce[i].color_code){
-						return i
-					}
-				}
-				return -1
+				 let codes = (code+"").split('::')
+				 
+				 if(codes[0] && codes[1]){
+					 var style_no = codes[0].substring(1,codes[0].length)
+					  var color_code =  codes[1].substring(1,codes[1].length)
+					 for(let i =0;i<this.dataSouce.length;i++){
+					 	if(style_no === this.dataSouce[i].style_no && color_code === this.dataSouce[i].color_code){
+					 		return i
+					 	}
+					 }
+					 return -1
+				 }else{
+					 uni.showToast({
+					 	title:'不合法的二维码'
+					 })
+					 setTimeout(()=>{
+						 barcode.start() //开始识别二维码 
+					 },1000)
+					 
+				 }
+				
+				
 			},
 			// 创建Barcode扫码控件
 			async createBarcode() {
 				currentWebview = this.$mp.page.$getAppWebview();
 				// #ifdef APP-PLUS  
 				let _this = this
+				// if (!embed) {
+				// 	embed = plus.barcode.create('barcode', [plus.barcode.QR], {
+				// 		top: (_this.CustomBar) + 'px',
+				// 		left: (_this.screenWidth - 200) + 'px',
+				// 		width: '200px',
+				// 		height: '200px',
+				// 		position: 'absolute'
+				// 	});
+
+				// 	currentWebview.append(embed);
+				// }
 				if (!embed) {
 					embed = plus.barcode.create('barcode', [plus.barcode.QR], {
 						top: (_this.CustomBar) + 'px',
-						left: (_this.screenWidth - 200) + 'px',
-						width: '200px',
-						height: '200px',
+						left: '0px',
+						width: '400px',
+						height: '400px',
 						position: 'absolute'
 					});
-
+				
 					currentWebview.append(embed);
 				}
 				// #endif
@@ -874,7 +980,7 @@
 
 	.sub-wrap {
 
-		margin-right: 205px;
+		left: 405px;
 		height: 200px;
 	}
 
@@ -900,7 +1006,7 @@
 	}
 
 	.base-info-wrap {
-		height: 350px;
+		height: 400px;
 		width: 100%;
 		display: flex;
 		flex-direction: column;
@@ -958,4 +1064,21 @@
 	.modal_wrap .cu-form-group .title{
 		font-size: 18px;
 	}
+	.fix-bottom{
+		position: fixed;
+		bottom:0;
+		left:0;
+		width: 100%;
+		height: 30px;
+		background: red;
+		color: #fff;
+		font-size: 20px;
+		line-height: 30px;
+		
+	}
+	.fix-bottom view{
+		float: left;
+		text-align: center;
+	}
+	
 </style>

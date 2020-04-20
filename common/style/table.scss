@@ -155,6 +155,7 @@ $div-table-border-width: 1upx;
       }
     }
   }
+  
   //外层容器控制td左右居中
   &.td-center{
 	  .td {
@@ -182,7 +183,7 @@ $div-table-border-width: 1upx;
       background: #fff;
 	  text-align: left;
     }
-
+	
     &.colspan {
       z-index: 10;
       position: absolute;
@@ -226,6 +227,10 @@ $div-table-border-width: 1upx;
 		@include fixBorderWidth(left);
       }
     }
+  }
+  
+  .tr:nth-child(2n) .td .td_wrap {
+	  background: #fafafa;
   }
 
   .th .td {
@@ -292,4 +297,5 @@ $div-table-border-width: 1upx;
     }
 
   }
+ 
 }

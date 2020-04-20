@@ -23,14 +23,16 @@
 				<!-- 头部内容 】-->
 				<!-- 有数据情况 -->
 				<template v-if="list.length">
-					<view class="table_tbody_box" :style='{height:talbeBodyHeight}'>
+					<scroll-view :scroll-top="scrollTop" scroll-y="true" @scroll="scroll" class="table_tbody_box" :style='{height:talbeBodyHeight}' ref = 'tables'>
 						<view class="div-table div-table-body">
 							<checkbox-group @change="checkboxChange">
 								<template v-for="(item,index) in list">
 									<view :class='["tr",rowClassNamePlus(item,index),
 								selection=="single"&&checkBoxList[index].$checked?"selected":"",
 								selection=="single"&&checkBoxList[index].$disabled?"disabled":""]'
-									 @click="selectRow(item,index)" :key="item.id">
+									 @click="selectRow(item,index)" :key="item.id"
+									 @longpress="longtap({row:item,index:index})"
+									 @dblclick='dblclickHandler({row:item,index:index})'>
 										<!-- 多选操作 -->
 										<view class="td selection" v-if="selection=='mulit'" :style='{width:selectionTdWidth,height:tdHeight+"px"}'>
 											<view :class="['td_wrap']" :style='{width:selectionTdWidth,height:tdHeight+"px"}'>
@@ -53,11 +55,14 @@
 													<slot :row='item' v-if="slotCols.indexOf(tdItem.key)>-1"></slot>
 													<template v-if="tdItem.$operateList">
 														<template v-for="btn in tdItem.$operateList">
-															<button :class="[btn.styles?btn.styles:'']" v-bind:style="{ padding: '2px 5px',fontSize:'12px',lineHeight:'1.2',display:'inline-block'}"
-															 @click="pullEvent(btn.event,{row:item,index:index})" type="primary" size="min" :key="btn.id">{{btn.label}}</button>
+															<button :class="[btn.styles?btn.styles:'']" 
+																v-bind:style="{ padding: '2px 5px',fontSize:'12px',lineHeight:'1.2',display:'inline-block'}"
+															 @click="pullEvent(btn.event,{row:item,index:index})" 
+															
+															 type="primary" size="min" :key="btn.id">{{btn.label}}</button>
 														</template>
 													</template>
-													<template v-else>{{item[tdItem.key]}} </template>
+													<template v-else>{{tdItem.key === 'index'?(index+1):item[tdItem.key]}} </template>
 												</view>
 											</view>
 										</template>
@@ -67,7 +72,7 @@
 
 						</view>
 			
-					</view>
+					</scroll-view>
 				</template>
 				<template v-else>
 					<view class="table_tbody_box empty-data-body-box div-table-body" :style='{height:emptyColHeight,width:emptyColWidth}'>
@@ -106,6 +111,8 @@
 							  selection=="single"&&checkBoxList[index].$checked?"selected":"",
 							  selection=="single"&&checkBoxList[index].$disabled?"disabled":""]'
 							  @click="selectRow(item,index)"
+							  @dblclick='dblclickHandler({row:item,index:index})'
+							  @longpress="longtap({row:item,index:index})"
 						>
 							<!-- 	多选且固定左边 】-->
 							<view class="td selection fixed-td" v-if="selection=='mulit'&&fixedCheckbox" :style='{width:selectionTdWidth,height:tdHeight+"px"}'>
@@ -123,7 +130,8 @@
 											<template v-if="columnsFixedLeft[0].$operateList">
 												<template v-for="btn in columnsFixedLeft[0].$operateList">
 													<button :class="[btn.styles?btn.styles:'']" v-bind:style="{ padding: '2px 5px',fontSize:'12px',lineHeight:'1.2',display:'inline-block'}"
-													 @click="pullEvent(btn.event,{row:item,index:index})" type="primary" size="min" :key="btn.id">{{btn.label}}</button>
+													 @click="pullEvent(btn.event,{row:item,index:index})"
+													  type="primary" size="min" :key="btn.id">{{btn.label}}</button>
 												</template>
 											</template>
 											<template v-else>{{item[columnsFixedLeft[0].key]}} </template>
@@ -157,7 +165,7 @@
 											<template v-if="columnsFixedRight[0]&&columnsFixedRight[0].$operateList">
 												<template v-for="btn in columnsFixedRight[0].$operateList">
 													<button :class="[btn.styles?btn.styles:'']" v-bind:style="{ padding: '2px 5px',fontSize:'12px',lineHeight:'1.2',display:'inline-block'}"
-													 @click="pullEvent(btn.event,{row:item,index:index})" type="primary" size="min" :key="btn.id">{{btn.label}}</button>
+													type="primary" size="min" :key="btn.id">{{btn.label}}</button>
 												</template>
 											</template>
 											<template v-else>{{item[columnsFixedRight[0].key]}} </template>
@@ -179,7 +187,6 @@
 	export default {
 		components:{loadingComponent},
 		props: {
-			//显示列
 			columns: {
 				type: Array,
 				required: true
@@ -285,6 +292,7 @@
 				let t = this.tableHeight !== "auto" ? (parseInt(this.tableHeight) - this.tdHeight - 3) + "px" : "auto";
 				return t;
 			},
+			
 			//可选的列表长度
 			allCheckBoxAbledLen() {
 				return this.checkBoxList.filter(item => !item.$disabled).length;
@@ -310,17 +318,50 @@
 				switchAllCheckBox: false,//多选=》全选
 				selectionTdWidth: "50px", //多选列宽
 				singleSelect: {},//单选，选中行
+				scrollTop: 0,
+				old: {
+					scrollTop: 0
+				}
 			}
 		},
 		watch: {
 			"list"() {
 				this.asyncCheckBoxList();
+				setTimeout(()=>{
+					this.computedHeight()
+				})
+				
 			}
 		},
 		created() {
 			this.asyncCheckBoxList();
+			
+			// this.$refs.table
+		},
+		mounted(){
+		
 		},
 		methods: {
+			 
+			computedHeight(){
+				let a  = this.talbeBodyHeight.split('px')[0]*1
+				if(this.list.length*32 >= this.height){
+					setTimeout(()=>{
+						  this.scrollTop += 32
+						  this.$forceUpdate()
+						 
+					},0)
+				}
+			},
+			scroll(e) {
+				this.old.scrollTop = e.detail.scrollTop
+			},
+			longtap(data){
+				this.$emit('dele', data);
+			},
+			dblclickHandler(data){
+				this.$emit('dbhandler', data);
+			},
 			//获取数据副本，轻拷贝
 			asyncCheckBoxList() {
 				this.checkBoxList = this.list.map(item => {

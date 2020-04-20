@@ -37,6 +37,10 @@
 			}
 		},
 		props: {
+			datas:{
+				type:Array,
+				default:[]
+			},
 			bgColor: {
 				type: String,
 				default: ''
@@ -52,6 +56,15 @@
 		},
 		methods: {
 			BackPage() {
+				
+				if(this.datas.length !== 0){
+					 
+					uni.showToast({
+						title:'数据未保存，是否退出',
+						icon:'none',
+						duration: 1000
+					})
+				}
 				if (getCurrentPages().length < 2 && 'undefined' !== typeof __wxConfig) {
 					let url = '/' + __wxConfig.pages[0]
 					return uni.redirectTo({url})
